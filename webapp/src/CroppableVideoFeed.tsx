@@ -79,7 +79,7 @@ export function CroppableVideoFeed({ videoFeed, SharedImgElement, retraining, se
     anno?.cancelSelected();
     anno?.clearAnnotations();
     const result = await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/setAIFocusRegion/reset`);
-    // console.log('result: ', result);
+    console.log('result: ', result);
   };
 
   const instructionText = "Drag on image to crop focus region for the AI";

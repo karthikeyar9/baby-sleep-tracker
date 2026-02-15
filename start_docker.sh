@@ -1,2 +1,6 @@
 #!/bin/bash
-yarn --cwd webapp start && python3 main.py
+# Start React app in background
+yarn --cwd webapp start &
+
+# Start Flask backend
+python3 main.py
