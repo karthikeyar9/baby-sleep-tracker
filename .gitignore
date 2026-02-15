@@ -8,6 +8,7 @@
 !webapp/**
 node_modules
 build
+__pycache__
 !sleep_logs.csv
 !*.ipynb
 !requirements.txt
@@ -21,3 +22,5 @@ build
 !.dockerignore
 !blanket_model
 !blanket_model/**
+!backend
+!backend/**
