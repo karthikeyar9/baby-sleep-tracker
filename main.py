@@ -129,6 +129,33 @@ def main():
     else:
         print("Crying detection disabled.")
 
+    # -----------------------------------------------------------------------
+    # Diaper change reminders — always enabled
+    # -----------------------------------------------------------------------
+    from backend.trackers.diaper_tracker import DiaperTracker
+    from backend.notifications.notifier import NotificationDispatcher
+
+    diaper_tracker = DiaperTracker()
+    if CRYING_DETECTION_ENABLED:
+        diaper_notifier = notifier  # reuse the one from crying detection
+    else:
+        diaper_notifier = NotificationDispatcher()
+
+    def diaper_reminder_loop():
+        while True:
+            result = diaper_tracker.check_reminder_needed()
+            if result:
+                _, hours = result
+                diaper_notifier.notify(
+                    "diaper_reminder",
+                    f"No diaper change logged in {hours}h. Time to check?",
+                )
+            time.sleep(300)  # check every 5 minutes
+
+    diaper_thread = Thread(target=diaper_reminder_loop, daemon=True)
+    diaper_thread.start()
+    print("Diaper change reminders enabled.")
+
     # Start Flask API server (non-daemon — keeps main thread alive)
     frame_queues = (frame_q, cropped_raw_frame_q, debug_frame_q)
     flask_thread = Thread(

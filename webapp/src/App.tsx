@@ -7,6 +7,7 @@ import VideoFeed, { VideoFeedTypeEnum } from './VideoFeed';
 import SleepStats from './SleepStats';
 import Charts from './Charts';
 import Settings from './Settings';
+import DiaperTracker from './DiaperTracker';
 
 export function eventsWithinRange(events: any, startDate: any, endDate: any) {
   return events.filter((log: any) => {
@@ -50,6 +51,9 @@ function App() {
       </CardPane>
       <CardPane>
         <SleepStats sleepLogs={sleepLogs} />
+      </CardPane>
+      <CardPane>
+        <DiaperTracker />
       </CardPane>
       <CardPane>
         <Retrain videoFeedType={videoFeedType} />

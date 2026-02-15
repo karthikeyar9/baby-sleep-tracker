@@ -204,11 +204,16 @@ def get_diaper_stats(date_str=None):
         "SELECT * FROM diaper_events ORDER BY timestamp DESC LIMIT 1"
     ).fetchone()
 
+    daily_avg_7d = conn.execute(
+        "SELECT COUNT(*) / 7.0 as avg FROM diaper_events WHERE DATE(timestamp) >= DATE('now', '-7 days')"
+    ).fetchone()["avg"]
+
     return {
         "date": date_str,
         "total": total,
         "wet": wet,
         "dirty": dirty,
+        "daily_average_7d": round(daily_avg_7d, 1),
         "last_change": dict(last) if last else None,
     }
 
