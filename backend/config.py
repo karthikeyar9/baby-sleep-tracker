@@ -89,6 +89,7 @@ OWL_MODE = os.getenv("OWL", "False").lower() in ("true", "1")
 CORAL_TPU_ENABLED = os.getenv("CORAL_TPU_ENABLED", "False").lower() in ("true", "1")
 CORAL_MODEL_PATH = os.getenv("CORAL_MODEL_PATH", "")
 CRYING_DETECTION_ENABLED = os.getenv("CRYING_DETECTION_ENABLED", "False").lower() in ("true", "1")
+BABY_AGE_MONTHS = int(os.getenv("BABY_AGE_MONTHS", "1"))
 
 # ---------------------------------------------------------------------------
 # Crying detection (Phase 2)

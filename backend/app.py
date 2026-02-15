@@ -250,8 +250,18 @@ def create_flask_app(detector, frame_queues):
         from backend.trackers.sleep_tracker import SleepTracker
         tracker = SleepTracker()
         date_str = request.args.get("date")
-        stats = tracker.get_daily_sleep_stats(date_str)
-        return jsonify(stats)
+        daily = tracker.get_daily_sleep_stats(date_str)
+        wake_window = tracker.get_wake_window_status()
+        night_sleep = tracker.get_night_sleep_stats(date_str)
+        return jsonify({**daily, "wake_window": wake_window, "night_sleep": night_sleep})
+
+    @app.route("/api/sleep/weekly", methods=["GET"])
+    @cross_origin()
+    def sleep_weekly():
+        from backend.trackers.sleep_tracker import SleepTracker
+        tracker = SleepTracker()
+        trends = tracker.get_weekly_trends()
+        return jsonify(trends)
 
     # ------------------------------------------------------------------
     # NEW: Cry events API

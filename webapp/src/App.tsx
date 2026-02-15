@@ -8,6 +8,7 @@ import SleepStats from './SleepStats';
 import Charts from './Charts';
 import Settings from './Settings';
 import DiaperTracker from './DiaperTracker';
+import SleepDashboard from './SleepDashboard';
 
 export function eventsWithinRange(events: any, startDate: any, endDate: any) {
   return events.filter((log: any) => {
@@ -51,6 +52,9 @@ function App() {
       </CardPane>
       <CardPane>
         <SleepStats sleepLogs={sleepLogs} />
+      </CardPane>
+      <CardPane>
+        <SleepDashboard />
       </CardPane>
       <CardPane>
         <DiaperTracker />
