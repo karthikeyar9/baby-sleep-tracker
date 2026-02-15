@@ -10,12 +10,17 @@ Starts all threads:
 import logging
 import os
 import sys
+import time
+from collections import deque
 from threading import Thread
 
 # Ensure the project root is on the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from backend.config import APP_DIR, LOG_FILE, DEBUG
+from backend.config import (
+    APP_DIR, LOG_FILE, DEBUG, CAM_URL,
+    CRYING_DETECTION_ENABLED, CRY_MODEL_PATH,
+)
 from backend.camera.frame_queue import create_frame_queues
 from backend.camera.rtsp_reader import receive
 from backend.models.blanket_svm import load_model
@@ -70,6 +75,59 @@ def main():
         daemon=True,
     )
     processor_thread.start()
+
+    # -----------------------------------------------------------------------
+    # Crying detection (Phase 2) — audio extraction + classification
+    # -----------------------------------------------------------------------
+    if CRYING_DETECTION_ENABLED:
+        from backend.camera.audio_reader import receive_audio
+        from backend.detectors.cry_detector import CryDetector
+        from backend.trackers.cry_tracker import CryTracker
+        from backend.notifications.notifier import NotificationDispatcher
+
+        audio_q = deque(maxlen=10)
+        cry_detector = CryDetector(model_path=CRY_MODEL_PATH or None)
+        cry_tracker = CryTracker()
+        notifier = NotificationDispatcher()
+
+        def process_audio():
+            """Pop audio chunks, classify, and track cry events."""
+            while True:
+                if not audio_q:
+                    time.sleep(0.1)
+                    continue
+
+                chunk = audio_q.popleft()
+                is_crying, confidence = cry_detector.classify_audio(chunk)
+                event = cry_tracker.update(is_crying, confidence)
+
+                if event is not None:
+                    event_type, value = event
+                    if event_type == "cry_start":
+                        intensity = CryDetector.get_intensity(value)
+                        notifier.notify(
+                            "baby_crying",
+                            f"Baby is {intensity}! (confidence: {value:.0%})",
+                            priority="high",
+                        )
+                    elif event_type == "cry_stop":
+                        notifier.notify(
+                            "baby_stopped_crying",
+                            f"Baby stopped crying after {value:.0f} seconds.",
+                            priority="normal",
+                        )
+
+        audio_thread = Thread(
+            target=receive_audio, args=(CAM_URL, audio_q), daemon=True
+        )
+        audio_thread.start()
+
+        cry_thread = Thread(target=process_audio, daemon=True)
+        cry_thread.start()
+
+        print("Crying detection enabled.")
+    else:
+        print("Crying detection disabled.")
 
     # Start Flask API server (non-daemon — keeps main thread alive)
     frame_queues = (frame_q, cropped_raw_frame_q, debug_frame_q)

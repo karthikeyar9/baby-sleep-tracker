@@ -91,6 +91,14 @@ CORAL_MODEL_PATH = os.getenv("CORAL_MODEL_PATH", "")
 CRYING_DETECTION_ENABLED = os.getenv("CRYING_DETECTION_ENABLED", "False").lower() in ("true", "1")
 
 # ---------------------------------------------------------------------------
+# Crying detection (Phase 2)
+# ---------------------------------------------------------------------------
+CRY_MODEL_PATH = os.getenv("CRY_MODEL_PATH", "")
+CRY_CONFIDENCE_THRESHOLD = float(os.getenv("CRY_CONFIDENCE_THRESHOLD", "0.6"))
+AUDIO_SAMPLE_RATE = int(os.getenv("AUDIO_SAMPLE_RATE", "16000"))
+AUDIO_CHUNK_SECONDS = float(os.getenv("AUDIO_CHUNK_SECONDS", "2.0"))
+
+# ---------------------------------------------------------------------------
 # Notifications
 # ---------------------------------------------------------------------------
 NOTIFICATION_COOLDOWN_SECONDS = int(os.getenv("NOTIFICATION_COOLDOWN_SECONDS", "300"))

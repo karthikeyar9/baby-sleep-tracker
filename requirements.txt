@@ -19,6 +19,9 @@ statsmodels>=0.14.0
 tbats>=1.1.3
 matplotlib>=3.8.0
 
+# Audio classification (optional — for crying detection on RPi)
+# tflite-runtime>=2.14.0
+
 # Hardware integrations (optional — comment out if not needed)
 pyhatchbabyrest==2.1.0
 pyserial==3.5

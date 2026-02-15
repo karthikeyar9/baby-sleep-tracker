@@ -1,4 +1,4 @@
-"""Cry event tracker — stub for Phase 2 implementation.
+"""Cry event tracker — debounced state machine for cry events.
 
 Uses the CryDetector's output to track cry events with debouncing.
 """
@@ -6,6 +6,7 @@ Uses the CryDetector's output to track cry events with debouncing.
 import logging
 import time
 
+from backend.detectors.cry_detector import CryDetector
 from backend.storage import sqlite_store
 
 logger = logging.getLogger(__name__)
@@ -43,9 +44,7 @@ class CryTracker:
                 self.cry_start_time = time.time()
                 event = ("cry_start", confidence)
 
-                # Log to database
-                from backend.detectors.cry_detector import CryDetector
-                intensity = CryDetector().get_intensity(confidence)
+                intensity = CryDetector.get_intensity(confidence)
                 sqlite_store.log_cry_start(intensity)
                 logger.info("Cry started (confidence: %.2f, intensity: %s)", confidence, intensity)
         else:
