@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import ReactSpeedometer from "react-d3-speedometer"
 import CircularProgress from '@mui/material/CircularProgress';
 import { VideoFeedTypeEnum } from './VideoFeed';
+import { legacy } from './api/endpoints';
 
 const REFETCH_CLASSIFICATION_MS = 2000;
 
@@ -17,7 +18,7 @@ export default function Retrain({ videoFeedType }: RetrainProps) {
 
     useEffect(() => {
         const intervalId = setInterval(async () => { 
-            const [awakeProba, ...reasons] = (await (await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/getResultAndReasons`)).text()).split(',');
+            const [awakeProba, ...reasons] = (await legacy.getResultAndReasons()).split(',');
             console.log('babyProba: ', awakeProba);
             console.log('reasons: ', reasons);
             setVoteReasons(reasons as any);

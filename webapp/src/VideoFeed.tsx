@@ -5,6 +5,8 @@ import { faMicrochip, faEye, faBaby, faXmark, faCropSimple } from '@fortawesome/
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import { ProgressBar } from  'react-loader-spinner'
 import { CroppableVideoFeed } from './CroppableVideoFeed';
+import { BACKEND_API } from './api/client';
+import { legacy } from './api/endpoints';
 
 const BorderLinearProgress = styled(LinearProgress)<{ awake: boolean }>(({ theme, awake }) => ({
   marginTop: '8px',
@@ -49,11 +51,11 @@ type VideoFeedProps = {
 export default function VideoFeed({ modelProba, setModelProba, videoFeedType, setVideoFeedType }: VideoFeedProps) {
 
   const [bodyFound, setBodyFound] = useState(false)
-  const videoFeed = videoFeedType === VideoFeedTypeEnum.ML ? `http://${process.env.REACT_APP_BACKEND_IP}/video_feed/processed` : `http://${process.env.REACT_APP_BACKEND_IP}/video_feed/raw`;
+  const videoFeed = videoFeedType === VideoFeedTypeEnum.ML ? `${BACKEND_API}/video_feed/processed` : `${BACKEND_API}/video_feed/raw`;
 
   useEffect(() => {
     const intervalId = setInterval(async () => { 
-        const [presentProba, _notPresentProba, _time, bodyFound] = (await (await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/getClassificationProbabilities`)).text()).split(',');
+        const [presentProba, _notPresentProba, _time, bodyFound] = (await legacy.getClassificationProba()).split(',');
         console.log('modelProba: ', presentProba);
         console.log("bodyFound: ", bodyFound)
         setBodyFound(bodyFound.toLowerCase() === "true");
@@ -78,7 +80,7 @@ export default function VideoFeed({ modelProba, setModelProba, videoFeedType, se
     if(retraining) return;
     setRetraining(true);
     console.log('Retraining...');
-    const trainingResult = await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/retrainWithNewSample/${classification}`);
+    const trainingResult = await legacy.retrainWithNewSample(classification);
     console.log("res: ", trainingResult);
     setRetraining(false);
     setSuccess(true);

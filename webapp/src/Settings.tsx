@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Grid, Box, Checkbox } from '@mui/material';
+import { legacy } from './api/endpoints';
 
 export default function Settings() {
 
     const [checked, setChecked] = useState<boolean | undefined>(undefined)
 
     const getSleepNotificationsEnabled = async () => {
-        const enabled = await ((await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/getSleepNotificationsEnabled`)).text());
+        const enabled = await legacy.getNotificationsEnabled();
         console.log('result: ', enabled);
         setChecked(enabled === 'true');
     };
@@ -16,7 +17,7 @@ export default function Settings() {
 
     const handleChange = async (_e: any, enabled: boolean) => {
         console.log('enabled: ', enabled);
-        await fetch(`http://${process.env.REACT_APP_BACKEND_IP}/setSleepNotificationsEnabled/${enabled}`);
+        await legacy.setNotificationsEnabled(enabled);
         console.log('done.');
         getSleepNotificationsEnabled();
     }

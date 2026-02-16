@@ -1,70 +1,30 @@
 // @ts-nocheck
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBaby, faDroplet, faPoo, faCircle, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
-
-const API_BASE = `http://${process.env.REACT_APP_BACKEND_IP}`;
-
-function timeAgo(isoString) {
-  if (!isoString) return "—";
-  const diff = (Date.now() - new Date(isoString).getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-function formatTime(isoString) {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  let h = d.getHours(), m = d.getMinutes();
-  const ampm = h >= 12 ? "pm" : "am";
-  h = h % 12 || 12;
-  return `${h}:${m < 10 ? "0" + m : m} ${ampm}`;
-}
+import { usePolling } from "./hooks/usePolling";
+import { useApi } from "./hooks/useApi";
+import { diaper } from "./api/endpoints";
+import { timeAgo, formatTime } from "./utils/formatters";
 
 export default function DiaperTracker() {
-  const [stats, setStats] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [logging, setLogging] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/diaper/stats`);
-      setStats(await res.json());
-    } catch (e) { console.error("Failed to fetch diaper stats", e); }
-  }, []);
+  const { data: stats } = usePolling(() => diaper.getStats(), 60000);
+  const { data: history } = useApi(() => diaper.getHistory(), [refreshKey]);
 
-  const fetchHistory = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/api/diaper/history?limit=10`);
-      setHistory(await res.json());
-    } catch (e) { console.error("Failed to fetch diaper history", e); }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-    fetchHistory();
-    const interval = setInterval(fetchStats, 60000);
-    return () => clearInterval(interval);
-  }, [fetchStats, fetchHistory]);
-
-  const logChange = async (type) => {
+  const logChange = useCallback(async (type: string) => {
     setLogging(true);
     try {
-      await fetch(`${API_BASE}/api/diaper`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type }),
-      });
-      await fetchStats();
-      await fetchHistory();
+      await diaper.log(type);
+      setRefreshKey((k) => k + 1);
     } catch (e) { console.error("Failed to log diaper change", e); }
     setLogging(false);
-  };
+  }, []);
 
-  const btnStyle = (color) => ({
+  const btnStyle = (color: string) => ({
     padding: "12px 20px",
     fontSize: "16px",
     border: "none",
@@ -103,7 +63,7 @@ export default function DiaperTracker() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", textAlign: "center", marginBottom: "12px" }}>
           <div>
             <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-              {stats.last_change ? timeAgo(stats.last_change.timestamp) : "—"}
+              {stats.last_change ? timeAgo(stats.last_change.timestamp) : "\u2014"}
             </div>
             <div style={{ fontSize: "12px", opacity: 0.7 }}>Last change</div>
           </div>
@@ -127,7 +87,7 @@ export default function DiaperTracker() {
         {showHistory ? "Hide" : "Show"} recent history
       </div>
 
-      {showHistory && history.length > 0 && (
+      {showHistory && history && history.length > 0 && (
         <div style={{ marginTop: "8px", fontSize: "14px" }}>
           {history.map((evt) => (
             <div key={evt.id} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
@@ -138,7 +98,7 @@ export default function DiaperTracker() {
         </div>
       )}
 
-      {showHistory && history.length === 0 && (
+      {showHistory && (!history || history.length === 0) && (
         <div style={{ textAlign: "center", opacity: 0.5, marginTop: "8px" }}>No events yet</div>
       )}
     </div>

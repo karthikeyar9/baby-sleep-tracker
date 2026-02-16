@@ -1,13 +1,9 @@
-// @ts-nocheck
-import React, { useEffect, useState } from "react";
-
-const API_BASE = `http://${process.env.REACT_APP_RESOURCE_SERVER_IP}:8001`;
-
-function formatMinutes(mins: number): string {
-  const h = Math.floor(Math.abs(mins) / 60);
-  const m = Math.round(Math.abs(mins) % 60);
-  return `${h}:${m < 10 ? "0" : ""}${m}`;
-}
+import React from "react";
+import { usePolling } from "./hooks/usePolling";
+import { useApi } from "./hooks/useApi";
+import { sleep } from "./api/endpoints";
+import { formatMinutes } from "./utils/formatters";
+import type { SleepStatsResponse, WeeklyDay, WakeWindow as WakeWindowType } from "./api/types";
 
 function urgencyColor(urgency: string): string {
   if (urgency === "red") return "#ff4444";
@@ -15,36 +11,7 @@ function urgencyColor(urgency: string): string {
   return "#00C851";
 }
 
-interface WakeWindow {
-  awake_minutes: number;
-  window_min_minutes: number;
-  window_max_minutes: number;
-  remaining_minutes: number;
-  urgency: string;
-  baby_age_months: number;
-}
-
-interface SleepStatsData {
-  total_nap_minutes: number;
-  nap_count: number;
-  longest_nap_minutes: number;
-  wake_window: WakeWindow;
-  night_sleep: {
-    total_minutes: number;
-    wake_count: number;
-    longest_stretch_minutes: number;
-  };
-}
-
-interface WeeklyDay {
-  date: string;
-  day_label: string;
-  total_nap_minutes: number;
-  nap_count: number;
-  longest_nap_minutes: number;
-}
-
-function WakeWindowBar({ ww }: { ww: WakeWindow }) {
+function WakeWindowBar({ ww }: { ww: WakeWindowType }) {
   const pct = Math.min(100, (ww.awake_minutes / ww.window_max_minutes) * 100);
   const color = urgencyColor(ww.urgency);
 
@@ -116,27 +83,8 @@ function StatItem({ label, value }: { label: string; value: string }) {
 }
 
 export default function SleepDashboard() {
-  const [stats, setStats] = useState<SleepStatsData | null>(null);
-  const [weekly, setWeekly] = useState<WeeklyDay[]>([]);
-
-  useEffect(() => {
-    const fetchStats = () => {
-      fetch(`${API_BASE}/api/sleep/stats`)
-        .then((r) => r.json())
-        .then(setStats)
-        .catch(() => {});
-    };
-    fetchStats();
-    const interval = setInterval(fetchStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    fetch(`${API_BASE}/api/sleep/weekly`)
-      .then((r) => r.json())
-      .then(setWeekly)
-      .catch(() => {});
-  }, []);
+  const { data: stats } = usePolling<SleepStatsResponse>(sleep.getStats, 30000);
+  const { data: weekly } = useApi<WeeklyDay[]>(sleep.getWeekly);
 
   if (!stats) return <div style={{ textAlign: "center", color: "#888" }}>Loading sleep data...</div>;
 
@@ -168,7 +116,7 @@ export default function SleepDashboard() {
         <StatItem label="Longest Stretch" value={formatMinutes(stats.night_sleep.longest_stretch_minutes)} />
       </div>
 
-      {weekly.length > 0 && (
+      {weekly && weekly.length > 0 && (
         <div>
           <h4 style={{ margin: "0 0 8px", color: "#ccc" }}>Weekly Trends</h4>
           <WeeklyChart data={weekly} />
